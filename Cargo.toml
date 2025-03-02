@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "src/cybersec_ai_agent_backend"
+]
+resolver = "2"

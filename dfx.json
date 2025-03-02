@@ -1,0 +1,27 @@
+{
+  "canisters": {
+    "cybersec_ai_agent_backend": {
+      "candid": "src/cybersec_ai_agent_backend/cybersec_ai_agent_backend.did",
+      "package": "cybersec_ai_agent_backend",
+      "type": "rust"
+    },
+    "cybersec_ai_agent_frontend": {
+      "dependencies": [
+        "cybersec_ai_agent_backend"
+      ],
+      "source": [
+        "src/cybersec_ai_agent_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "cybersec_ai_agent_frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
