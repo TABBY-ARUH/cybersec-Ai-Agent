@@ -14,5 +14,9 @@
   "type": "module",
   "workspaces": [
     "src/cybersec_ai_agent_frontend"
-  ]
+  ],
+  "dependencies": {
+    "@dfinity/agent": "^2.3.0",
+    "@dfinity/candid": "^2.3.0"
+  }
 }

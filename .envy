@@ -1,0 +1,12 @@
+
+# DFX CANISTER ENVIRONMENT VARIABLES
+DFX_VERSION='0.25.0'
+DFX_NETWORK='local'
+CANISTER_ID_WALLET='be2us-64aaa-aaaaa-qaabq-cai'
+CANISTER_ID_CYBERSEC_AI_AGENT_FRONTEND='bd3sg-teaaa-aaaaa-qaaba-cai'
+CANISTER_ID_CYBERSEC_AI_AGENT_BACKEND='bkyz2-fmaaa-aaaaa-qaaaq-cai'
+CANISTER_ID_CYBERSEC_AI_AGENT='bw4dl-smaaa-aaaaa-qaacq-cai'
+CANISTER_ID='bw4dl-smaaa-aaaaa-qaacq-cai'
+CANISTER_CANDID_PATH='/root/cybersec_ai_agent/src/cybersec_ai_agent/cybersec_ai_agent.did'
+DATABASE_URL=postgres://postgres:4563@localhost/threats_db
+# END DFX CANISTER ENVIRONMENT VARIABLES

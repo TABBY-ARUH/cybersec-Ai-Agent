@@ -1,25 +1,43 @@
 {
   "canisters": {
     "cybersec_ai_agent_backend": {
-      "candid": "src/cybersec_ai_agent_backend/cybersec_ai_agent_backend.did",
+      "type": "rust",
       "package": "cybersec_ai_agent_backend",
-      "type": "rust"
+      "candid": "src/cybersec_ai_agent_backend/cybersec_ai_agent_backend.did"
+    },
+    "cybersec_ai_agent": {
+      "type": "rust",
+      "package": "cybersec_ai_agent",
+      "candid": "src/cybersec_ai_agent/cybersec_ai_agent.did"
     },
     "cybersec_ai_agent_frontend": {
-      "dependencies": [
-        "cybersec_ai_agent_backend"
-      ],
-      "source": [
-        "src/cybersec_ai_agent_frontend/dist"
-      ],
-      "type": "assets",
-      "workspace": "cybersec_ai_agent_frontend"
+      "dependencies": ["cybersec_ai_agent_backend"],
+      "frontend": {
+        "entrypoint": "src/cybersec_ai_agent_frontend/dist/index.html"
+      },
+      "source": ["src/cybersec_ai_agent_frontend/dist"],
+      "type": "assets"
+    },
+    "wallet": {
+      "type": "rust",
+      "package": "wallet_canister",
+      "candid": "src/wallet_canister/wallet.did"
     }
   },
   "defaults": {
     "build": {
       "args": "",
       "packtool": ""
+    }
+  },
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:8000",
+      "type": "ephemeral"
+    },
+    "ic": {
+      "providers": ["https://icp0.io"],
+      "type": "persistent"
     }
   },
   "output_env_file": ".env",

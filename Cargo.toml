@@ -1,5 +1,10 @@
+
 [workspace]
 members = [
-    "src/cybersec_ai_agent_backend"
+    "src/cybersec_ai_agent_backend",
+    "src/wallet_canister",
+    "src/cybersec_ai_agent"
 ]
-resolver = "2"
+
+resolver = "2"  # Use resolver version 2 for better dependency resolution
+
