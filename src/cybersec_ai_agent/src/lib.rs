@@ -1,4 +1,4 @@
-use candid::{CandidType, Deserialize, Nat};
+use candid::{CandidType, Deserialize};
 use ic_cdk_macros::{query, update, init};
 use ic_cdk::api::management_canister::http_request::{HttpResponse, HttpHeader};
 
