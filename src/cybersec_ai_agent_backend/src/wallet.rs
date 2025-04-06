@@ -1,50 +1,67 @@
 use candid::Principal;
-use ic_cdk::call;
-use ic_cdk::api::call::RejectionCode;
-use std::error::Error as StdError;
+use ic_cdk::api::call::{call, RejectionCode};
+use ic_cdk::{query, update};
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::fmt;
 
-// Define a custom error type to handle call errors
-#[derive(Debug)]
-struct CallError(RejectionCode, String);
+// Use thread_local instead of lazy_static for IC canisters
+thread_local! {
+    static WALLET_STORE: RefCell<HashMap<Principal, String>> = RefCell::new(HashMap::new());
+}
 
-impl std::fmt::Display for CallError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Call rejected with code {:?}: {}", self.0, self.1)
+// Define a custom error type that implements both Error and CandidType
+#[derive(candid::CandidType, Debug)]
+pub struct CallError {
+    code: RejectionCode,
+    message: String,
+}
+
+impl CallError {
+    pub fn new(code: RejectionCode, message: String) -> Self {
+        CallError { code, message }
     }
 }
 
-impl StdError for CallError {}
-
-// Define the function for verifying the user
-async fn verify_user(user_wallet: Principal) -> Result<(), Box<dyn StdError>> {
-    let result: Result<(), (RejectionCode, String)> = call(
-        user_wallet,                // Wallet's Principal
-        "verifyUser",               // The canister function to call
-        (user_wallet,),             // Pass the wallet as a parameter
-    ).await;
-
-    match result {
-        Ok(()) => {
-            ic_cdk::println!("Verification successful");
-            Ok(())
-        },
-        Err((code, msg)) => Err(Box::new(CallError(code, msg))),
+impl fmt::Display for CallError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Call error (code: {:?}): {}", self.code, self.message)
     }
 }
 
-// Define the function for submitting a transaction
-async fn submit_transaction(user_wallet: Principal, action: String) -> Result<(), Box<dyn StdError>> {
-    let result: Result<(), (RejectionCode, String)> = call(
-        user_wallet,                        // Wallet Principal
-        "submitTransaction",                // Canister function to call
-        (user_wallet, action),              // Pass wallet and action as parameters
-    ).await;
+impl std::error::Error for CallError {}
+
+#[update]
+async fn verify_user(user_wallet: Principal) -> Result<(), CallError> {
+    let result: Result<(), (RejectionCode, String)> =
+        call::<(Principal,), ()>(user_wallet, "verifyUser", (user_wallet,)).await;
 
     match result {
         Ok(()) => {
-            ic_cdk::println!("Transaction submission successful");
+            ic_cdk::println!("Verification successful for user: {:?}", user_wallet);
+            // Use with() to access thread_local storage
+            WALLET_STORE.with(|store| {
+                store
+                    .borrow_mut()
+                    .insert(user_wallet, "Verified".to_string());
+            });
             Ok(())
-        },
-        Err((code, msg)) => Err(Box::new(CallError(code, msg))),
+        }
+        Err((code, msg)) => {
+            ic_cdk::println!("Verification failed: {:?} - {}", code, msg);
+            Err(CallError::new(code, msg))
+        }
     }
+}
+
+#[query]
+fn get_wallet_info(user_wallet: Principal) -> String {
+    // Use with() to access thread_local storage
+    WALLET_STORE.with(|store| {
+        let store = store.borrow();
+        match store.get(&user_wallet) {
+            Some(status) => format!("Wallet information for {}: {}", user_wallet, status),
+            None => format!("No information found for wallet: {}", user_wallet),
+        }
+    })
 }

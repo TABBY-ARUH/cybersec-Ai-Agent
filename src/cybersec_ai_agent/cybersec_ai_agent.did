@@ -1,12 +1,13 @@
 service : {
-  detect_threats : (vec record {
-    message: text;
-    timestamp: nat64;
-    source: text;
-  }) -> (vec record {
-    is_threat: bool;
-    confidence: float64;
-    category: text;
-    details: text;
-  });
+    "greet": (text) -> (text) query;
+    "detect_threats": (vec record {
+        message: text;
+        timestamp: nat64;
+        source: text;
+    }) -> (vec record {
+        is_threat: bool;
+        confidence: float64;
+        category: text;
+        details: text;
+    });
 };

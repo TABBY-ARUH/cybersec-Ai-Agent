@@ -1,21 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CyberSec AI Agent</title>
+    <meta name="description" content="CyberSec AI Agent - Your smart assistant for cybersecurity monitoring and insights." />
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width" />
-  <title>IC Hello Starter</title>
-  <base href="/" />
-  <link rel="icon" href="/favicon.ico" />
-</head>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto+Slab:wght@700&display=swap"
+      rel="stylesheet"
+    />
 
-<body>
-  <div class="browser-warning">
-    ⚠️ If this page appears broken, try reloading. If the problem persists, try switching browsers; Chrome or
-    Firefox are recommended.
-  </div>
-  <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
-</body>
+    <!-- Styles -->
+    <link rel="stylesheet" href="/src/index.css" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+  </head>
 
+  <body>
+    <main class="container">
+      <h1 class="text-4xl">Welcome to CyberSec AI Agent</h1>
+      <p class="mt-4">Your smart cybersecurity assistant powered by AI.</p>
+
+      <div class="section mt-8 flex flex-wrap justify-center">
+        <div class="card max-w-sm">
+          <h2 class="text-2xl">Monitor</h2>
+          <p class="mt-2">Stay ahead of threats with real-time monitoring.</p>
+        </div>
+        <div class="card max-w-sm">
+          <h2 class="text-2xl">Analyze</h2>
+          <p class="mt-2">Let AI identify vulnerabilities and suspicious activity.</p>
+        </div>
+        <div class="card max-w-sm">
+          <h2 class="text-2xl">Respond</h2>
+          <p class="mt-2">Act quickly with smart alerts and recommended actions.</p>
+        </div>
+      </div>
+
+      <div class="mt-8">
+        <button onclick="alert('Cyber defense starts now!')">Get Started</button>
+      </div>
+    </main>
+
+    <footer class="mt-10 text-center text-sm text-gray-500">
+      &copy; 2025 CyberSec AI Agent. All rights reserved.
+    </footer>
+
+    <!-- Vite script -->
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>

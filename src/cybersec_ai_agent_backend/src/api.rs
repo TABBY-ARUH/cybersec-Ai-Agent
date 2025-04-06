@@ -1,98 +1,82 @@
-use candid::{CandidType, Deserialize};
-use ic_cdk_macros::{query, update};
-use serde::Serialize;
-use crate::threat_detection::detect_threats;
+use candid::{CandidType, Deserialize, Func, Principal};
+use ic_cdk::api::management_canister::http_request::HttpResponse;
+use serde::{Serialize, Serializer};
+use serde_bytes;
+use num_traits::cast::ToPrimitive;
 
-#[derive(CandidType, Deserialize, Serialize, Debug)]
-pub struct LogEntry {
-    pub message: String,
+// Define a token type for streaming callbacks
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
+pub struct HttpResponseStreamingCallbackToken {
+    pub token: String,
+    // Add any other fields you need
 }
 
-// Simplified HTTP response without streaming to avoid serialization issues
-#[derive(CandidType, Serialize, Deserialize)]
-pub struct HttpResponse {
+// Define CallbackFunc with proper serialization
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct CallbackFunc {
+    pub function: Func,
+    #[serde(with = "serde_bytes")]
+    pub environment: Vec<u8>,
+}
+
+// Implement custom serialization for CallbackFunc
+impl Serialize for CallbackFunc {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        use serde::ser::SerializeStruct;
+        let mut state = serializer.serialize_struct("CallbackFunc", 2)?;
+        let (principal, method) = (&self.function.principal, &self.function.method);
+        state.serialize_field("function", &format!("{}:{}", principal, method))?;
+        state.serialize_field("environment", &self.environment)?;
+        state.end()
+    }
+}
+
+// Define StreamingStrategy
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
+pub enum StreamingStrategy {
+    Callback {
+        callback: CallbackFunc,
+        token: HttpResponseStreamingCallbackToken,
+    },
+}
+
+// Define a Custom HttpResponse structure to avoid name conflict
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
+pub struct CustomHttpResponse {
     pub status_code: u16,
     pub headers: Vec<(String, String)>,
+    #[serde(with = "serde_bytes")]
     pub body: Vec<u8>,
-    pub streaming_strategy: Option<()>, // Using unit type to avoid candid::Func serialization issues
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub streaming_strategy: Option<StreamingStrategy>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub upgrade: Option<bool>,
 }
 
-#[derive(CandidType, Deserialize)]
+// Define HttpRequest structure
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct HttpRequest {
-    pub method: String,
     pub url: String,
+    pub method: String,
     pub headers: Vec<(String, String)>,
+    #[serde(with = "serde_bytes")]
     pub body: Vec<u8>,
-    pub certificate_version: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_response_bytes: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transform: Option<(Principal, String)>,
 }
 
-// Standard http_request method as required by IC
-#[query]
-pub fn http_request(req: HttpRequest) -> HttpResponse {
-    handle_request(req, false)
-}
-
-// Update method for state-changing operations
-#[update]
-pub fn http_request_update(req: HttpRequest) -> HttpResponse {
-    handle_request(req, true)
-}
-
-pub fn handle_request(req: HttpRequest, is_update: bool) -> HttpResponse {
-    // Only process POST requests to /threat_endpoint
-    if req.method == "POST" && req.url.contains("/threat_endpoint") {
-        if !is_update {
-            // For query calls, we need to upgrade to update call
-            return HttpResponse {
-                status_code: 200,
-                headers: vec![("Content-Type".to_string(), "application/json".to_string())],
-                body: vec![],
-                streaming_strategy: None,
-                upgrade: Some(true),
-            };
-        }
-        
-        // Parse the request body
-        match serde_json::from_slice::<Vec<LogEntry>>(&req.body) {
-            Ok(log_entries) => {
-                // Process the log entries
-                let results = detect_threats(log_entries);
-                
-                // Return the results as JSON
-                let response_body = serde_json::to_vec(&results).unwrap_or_default();
-                
-                HttpResponse {
-                    status_code: 200,
-                    headers: vec![
-                        ("Content-Type".to_string(), "application/json".to_string()),
-                    ],
-                    body: response_body,
-                    streaming_strategy: None,
-                    upgrade: None,
-                }
-            },
-            Err(_) => {
-                // Return a 400 Bad Request if the body couldn't be parsed
-                HttpResponse {
-                    status_code: 400,
-                    headers: vec![
-                        ("Content-Type".to_string(), "text/plain".to_string()),
-                    ],
-                    body: "Invalid request body".as_bytes().to_vec(),
-                    streaming_strategy: None,
-                    upgrade: None,
-                }
-            }
-        }
-    } else {
-        // Return a 404 Not Found for other routes
-        HttpResponse {
-            status_code: 404,
-            headers: vec![
-                ("Content-Type".to_string(), "text/plain".to_string()),
-            ],
-            body: "Not Found".as_bytes().to_vec(),
+// Convert IC HttpResponse to CustomHttpResponse
+impl From<HttpResponse> for CustomHttpResponse {
+    fn from(response: HttpResponse) -> Self {
+        CustomHttpResponse {
+            status_code: response.status.0.to_u64().unwrap_or(200) as u16,
+            headers: response.headers.iter().map(|h| (h.name.clone(), h.value.clone())).collect(),
+            body: response.body.clone(),
             streaming_strategy: None,
             upgrade: None,
         }

@@ -1,3 +1,41 @@
 service : {
-    "greet": (text) -> (text) query;
-}
+    "analyze_canister_security": (principal) -> (record {
+        canister_id: text;
+        issues: vec text;
+        risk_level: text;
+    });
+    "check_vulnerabilities": (text, text) -> (vec record {
+        cve_id: text;
+        severity: text;
+        description: text;
+        remediation: text;
+    });
+    "detect_anomalies": (vec float64) -> (record {
+        is_anomaly: bool;
+        confidence: float64;
+        explanation: text;
+    }) query;
+    "detect_threats": (vec record {
+        source: text;
+        message: text;
+        timestamp: nat64;
+    }) -> (vec record {
+        is_threat: bool;
+        confidence: float64;
+        category: text;
+        details: text;
+    }) query;
+    "get_security_logs": () -> (vec record {
+        timestamp: nat64;
+        event_type: text;
+        details: text;
+        severity: text;
+    }) query;
+    "get_threat_summary": () -> (vec record { text; nat32 }) query;
+    "log_security_event": (text, text, text) -> ();
+    "scan_network": (text, record { nat16; nat16 }) -> (record {
+        target: text;
+        open_ports: vec nat16;
+        services: vec text;
+    });
+};

@@ -3,12 +3,21 @@
     "cybersec_ai_agent_backend": {
       "type": "rust",
       "package": "cybersec_ai_agent_backend",
-      "candid": "src/cybersec_ai_agent_backend/cybersec_ai_agent_backend.did"
+      "candid": "src/cybersec_ai_agent_backend/cybersec_ai_agent_backend.did",
+      "build": "cargo build --target wasm32-unknown-unknown --release",
+      "wasm": "target/wasm32-unknown-unknown/release/cybersec_ai_agent_backend.wasm",
+      "settings": {
+        "experimental": {
+          "http_outcall": true
+        }
+      }
     },
     "cybersec_ai_agent": {
       "type": "rust",
       "package": "cybersec_ai_agent",
-      "candid": "src/cybersec_ai_agent/cybersec_ai_agent.did"
+      "candid": "src/cybersec_ai_agent/cybersec_ai_agent.did",
+      "build": "cargo build --target wasm32-unknown-unknown --release",
+      "wasm": "target/wasm32-unknown-unknown/release/cybersec_ai_agent.wasm"
     },
     "cybersec_ai_agent_frontend": {
       "dependencies": ["cybersec_ai_agent_backend"],
@@ -17,26 +26,19 @@
       },
       "source": ["src/cybersec_ai_agent_frontend/dist"],
       "type": "assets"
-    },
-    "wallet": {
-      "type": "rust",
-      "package": "wallet_canister",
-      "candid": "src/wallet_canister/wallet.did"
-    }
-  },
-  "defaults": {
-    "build": {
-      "args": "",
-      "packtool": ""
     }
   },
   "networks": {
     "local": {
-      "bind": "127.0.0.1:8000",
+      "bind": "127.0.0.1:4943",
       "type": "ephemeral"
     },
     "ic": {
-      "providers": ["https://icp0.io"],
+      "providers": [
+        "https://icp0.io",
+        "https://ic0.app",
+        "https://boundary.ic0.app"
+      ],
       "type": "persistent"
     }
   },

@@ -1,14 +1,22 @@
-
 [package]
 name = "wallet_canister"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-ic-cdk = "0.11"
-candid = "0.9"
+ic-cdk = "0.12"
+ic-cdk-macros = "0.6"
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+candid = "0.9"
+ic-ledger-types = "0.9"
+num-bigint = "0.4"
+num-traits = "0.2"
+serde_bytes = "0.11"
+ic-agent = { version = "0.30.0", features = ["wasm-bindgen"] }
+
+# Fixed `ic-cdk-exports`
+ic-cdk-exports = { git = "https://github.com/dfinity/cdk-rs", package = "ic-cdk-exports", features = ["http"] }
 
 [lib]
 crate-type = ["cdylib"]
-

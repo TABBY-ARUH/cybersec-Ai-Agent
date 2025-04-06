@@ -1,7 +1,16 @@
 use crate::api::LogEntry;
+use candid::CandidType;
 use ic_cdk::println;
+use serde::Serialize;
 
-// Define common blockchain and cryptography threat patterns
+#[derive(Debug, Clone, Serialize, CandidType)]
+pub struct ThreatDetectionResult {
+    pub category: String,
+    pub severity: String,
+    pub confidence: f64,
+    pub details: String,
+}
+
 const CRYPTO_THREATS: [&str; 12] = [
     "private key",
     "seed phrase",
@@ -14,10 +23,9 @@ const CRYPTO_THREATS: [&str; 12] = [
     "threshold signature",
     "canister exploit",
     "cycle drain",
-    "principal id theft"
+    "principal id theft",
 ];
 
-// Define Internet Computer specific vulnerabilities
 const IC_VULNERABILITIES: [&str; 8] = [
     "vetkd exploit",
     "encrypted-notes vulnerability",
@@ -26,59 +34,69 @@ const IC_VULNERABILITIES: [&str; 8] = [
     "session timeout",
     "symmetric key",
     "unauthorized delegation",
-    "canister call injection"
+    "canister call injection",
 ];
 
-pub fn detect_threats(logs: Vec<LogEntry>) -> Vec<String> {
+pub fn detect_threats(logs: Vec<LogEntry>) -> Vec<ThreatDetectionResult> {
     let mut threats = Vec::new();
-    
+
     for log in logs {
-        // Check for general malware
+        let mut detected_threat: Option<ThreatDetectionResult> = None;
+
         if log.message.to_lowercase().contains("malware") {
-            threats.push(format!("Malware threat detected: {}", log.message));
+            detected_threat = Some(ThreatDetectionResult {
+                category: "Malware".to_string(),
+                severity: "HIGH".to_string(),
+                confidence: 0.85,
+                details: format!("Malware threat detected in: {}", log.message),
+            });
         }
-        
-        // Check for cryptography and blockchain threats
+
         for threat in CRYPTO_THREATS.iter() {
             if log.message.to_lowercase().contains(&threat.to_lowercase()) {
-                threats.push(format!("Crypto/blockchain threat detected: {} - {}", threat, log.message));
-                // Log to the IC console for monitoring
+                detected_threat = Some(ThreatDetectionResult {
+                    category: "Crypto/Blockchain Threat".to_string(),
+                    severity: analyze_threat_severity(threat),
+                    confidence: 0.9,
+                    details: format!("Detected: {} in {}", threat, log.message),
+                });
                 println!("Critical crypto threat detected: {}", threat);
                 break;
             }
         }
-        
-        // Check for Internet Computer specific vulnerabilities
+
         for vuln in IC_VULNERABILITIES.iter() {
             if log.message.to_lowercase().contains(&vuln.to_lowercase()) {
-                threats.push(format!("Internet Computer vulnerability detected: {} - {}", vuln, log.message));
-                // Log to the IC console for monitoring
+                detected_threat = Some(ThreatDetectionResult {
+                    category: "IC Vulnerability".to_string(),
+                    severity: analyze_threat_severity(vuln),
+                    confidence: 0.8,
+                    details: format!("Detected IC vulnerability: {} in {}", vuln, log.message),
+                });
                 println!("IC-specific vulnerability detected: {}", vuln);
                 break;
             }
         }
-        
-        // Check for vetKeys-related security issues based on the knowledge sources
-        if log.message.to_lowercase().contains("vetkey") || 
-           log.message.to_lowercase().contains("threshold encryption") {
-            threats.push(format!("vetKeys security concern: {}", log.message));
+
+        if let Some(threat) = detected_threat {
+            threats.push(threat);
         }
     }
-    
     threats
 }
 
-// Helper function to analyze severity of threats
-pub fn analyze_threat_severity(threat: &str) -> &'static str {
-    if threat.contains("private key") || 
-       threat.contains("seed phrase") || 
-       threat.contains("principal id theft") {
-        "CRITICAL"
-    } else if threat.contains("canister") || 
-              threat.contains("cycle") || 
-              threat.contains("delegation") {
-        "HIGH"
+pub fn analyze_threat_severity(threat: &str) -> String {
+    if ["private key", "seed phrase", "principal id theft"]
+        .iter()
+        .any(|&t| threat.contains(t))
+    {
+        "CRITICAL".to_string()
+    } else if ["canister", "cycle", "delegation"]
+        .iter()
+        .any(|&t| threat.contains(t))
+    {
+        "HIGH".to_string()
     } else {
-        "MEDIUM"
+        "MEDIUM".to_string()
     }
 }

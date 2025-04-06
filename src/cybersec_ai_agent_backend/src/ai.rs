@@ -24,49 +24,35 @@ pub struct ThreatDetectionResult {
     pub details: String,
 }
 
-// Store baseline statistics for anomaly detection
 thread_local! {
     static BASELINE_STATS: RefCell<HashMap<String, f64>> = RefCell::new(HashMap::new());
     static KEYWORD_THREATS: RefCell<Vec<String>> = RefCell::new(vec![
-        "injection".to_string(),
-        "overflow".to_string(),
-        "exploit".to_string(),
-        "malware".to_string(),
-        "unauthorized".to_string(),
-        "brute force".to_string(),
-        "ddos".to_string(),
-        "xss".to_string(),
-        "csrf".to_string(),
-        "backdoor".to_string(),
+        "injection".to_string(), "overflow".to_string(), "exploit".to_string(),
+        "malware".to_string(), "unauthorized".to_string(), "brute force".to_string(),
+        "ddos".to_string(), "xss".to_string(), "csrf".to_string(), "backdoor".to_string(),
     ]);
 }
 
-// Simple on-chain threat detection
 #[update]
-fn detect_threats(logs: Vec<LogEntry>) -> Vec<ThreatDetectionResult> {
-    logs.iter().map(|log| analyze_log_entry(log)).collect()
+pub fn detect_threats(logs: Vec<LogEntry>) -> Vec<ThreatDetectionResult> {
+    logs.into_iter().map(analyze_log_entry).collect()
 }
 
-fn analyze_log_entry(log: &LogEntry) -> ThreatDetectionResult {
-    // Simple keyword-based detection
+fn analyze_log_entry(log: LogEntry) -> ThreatDetectionResult {
     let mut is_threat = false;
     let mut confidence = 0.0;
     let mut category = "normal".to_string();
     let mut details = "No threat detected".to_string();
-    
+
     KEYWORD_THREATS.with(|keywords| {
-        for keyword in keywords.borrow().iter() {
-            if log.message.to_lowercase().contains(&keyword.to_lowercase()) {
-                is_threat = true;
-                confidence = 0.7; // Basic confidence score
-                category = "suspicious_activity".to_string();
-                details = format!("Suspicious keyword detected: {}", keyword);
-                break;
-            }
+        if let Some(keyword) = keywords.borrow().iter().find(|&kw| log.message.to_lowercase().contains(kw)) {
+            is_threat = true;
+            confidence = 0.7;
+            category = "suspicious_activity".to_string();
+            details = format!("Suspicious keyword detected: {}", keyword);
         }
     });
-    
-    // Simple frequency analysis
+
     if !is_threat {
         let source_frequency = update_source_frequency(&log.source);
         if source_frequency > 10.0 {
@@ -76,13 +62,8 @@ fn analyze_log_entry(log: &LogEntry) -> ThreatDetectionResult {
             details = format!("Unusual activity frequency from source: {}", log.source);
         }
     }
-    
-    ThreatDetectionResult {
-        is_threat,
-        confidence,
-        category,
-        details,
-    }
+
+    ThreatDetectionResult { is_threat, confidence, category, details }
 }
 
 fn update_source_frequency(source: &str) -> f64 {
@@ -94,14 +75,11 @@ fn update_source_frequency(source: &str) -> f64 {
     })
 }
 
-// Your existing HTTP outcall function for more advanced analysis
-pub async fn analyze_content_with_ai(logs: Vec<LogEntry>) -> Result<Vec<ThreatDetectionResult>, Box<dyn Error>> {
-    // First run the simple on-chain analysis
+#[update]
+pub async fn analyze_content_with_ai(logs: Vec<LogEntry>) -> Result<Vec<ThreatDetectionResult>, String> {
     let basic_results = detect_threats(logs.clone());
-    
-    // For logs that need more advanced analysis, use the external API
     let suspicious_logs: Vec<LogEntry> = logs.into_iter()
-        .zip(basic_results.iter())
+        .zip(&basic_results)
         .filter(|(_, result)| result.confidence < 0.8 && result.confidence > 0.4)
         .map(|(log, _)| log)
         .collect();
@@ -110,49 +88,24 @@ pub async fn analyze_content_with_ai(logs: Vec<LogEntry>) -> Result<Vec<ThreatDe
         return Ok(basic_results);
     }
     
-    // Add your HTTP outcall implementation here
-    // This would complete the analyze_content_with_ai function
-    
-    Ok(basic_results) // Placeholder return
+    // Placeholder: Add HTTP request logic for AI-based analysis
+    Ok(basic_results)
 }
 
-// This should be a separate function, not nested inside analyze_content_with_ai
 #[update]
-async fn analyze_with_onchain_model(logs: Vec<LogEntry>) -> Vec<ThreatDetectionResult> {
-    // Note: ic_llm is a placeholder module that doesn't exist yet
-    // You would need to use the actual LLM integration when available
-    
+pub async fn analyze_with_onchain_model(logs: Vec<LogEntry>) -> Vec<ThreatDetectionResult> {
     let mut results = Vec::new();
-    
     for log in logs {
-        // Example of using the LLM canister for analysis
-        // This is simplified and would need to be adapted to your specific needs
-        let prompt = format!(
-            "Analyze this log entry for security threats: {}\nSource: {}", 
-            log.message, 
-            log.source
-        );
-        
-        // This is a placeholder - you would need to use the actual API
-        // let response = ic_llm::prompt(Model::Llama3_1_8B, &prompt).await;
-        let response = "Placeholder response"; // Replace with actual implementation
-        
-        // Process the response to extract threat information
-        let result = ThreatDetectionResult {
-            is_threat: response.contains("threat") || response.contains("suspicious"),
-            confidence: 0.85,
-            category: if response.contains("injection") {
-                "sql_injection".to_string()
-            } else if response.contains("ddos") {
-                "ddos_attack".to_string()
-            } else {
-                "unknown_threat".to_string()
-            },
-            details: response.to_string(),
+        let prompt = format!("Analyze this log entry for security threats: {}\nSource: {}", log.message, log.source);
+        let response = "Placeholder response"; // Replace with AI model integration
+        let category = if response.contains("injection") {
+            "sql_injection".to_string()
+        } else if response.contains("ddos") {
+            "ddos_attack".to_string()
+        } else {
+            "unknown_threat".to_string()
         };
-        
-        results.push(result);
+        results.push(ThreatDetectionResult { is_threat: response.contains("threat"), confidence: 0.85, category, details: response.to_string() });
     }
-    
     results
 }
